@@ -19,13 +19,14 @@ export interface SectionProps {
 export interface HeaderContent {
   logoTitle: string;
   logoSubtitle: string;
-  logoImage?: string; 
+  logoImage?: string;
+  favicon?: string; // New field for Favicon
   navLink1: string;
   navLink2: string;
   navLink3: string;
   btnLojista: string;
-  btnLojistaUrl: string; // New field for button link
-  headerWhatsapp: string; // New field for WhatsApp link
+  btnLojistaUrl: string;
+  headerWhatsapp: string;
 }
 
 export interface HeroContent {
@@ -120,4 +121,14 @@ export interface SiteContent {
   footer: FooterContent;
   scripts?: ScriptsContent;
   analytics?: AnalyticsData; // Added Analytics
+}
+
+// Update Context Interface to include delete function
+export interface ContentContextType {
+  content: SiteContent;
+  updateContent: (newContent: SiteContent) => Promise<void>;
+  resetContent: () => void;
+  trackPartnerClick: (partnerId: number, type: 'website' | 'whatsapp') => void;
+  clearAnalyticsData: (startDate: string, endDate: string) => Promise<void>;
+  isLoading: boolean;
 }

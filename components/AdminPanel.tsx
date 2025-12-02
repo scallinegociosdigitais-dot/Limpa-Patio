@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Settings, X, Save, RotateCcw, Plus, Trash2, Upload, Image as ImageIcon, Lock, LogIn, LogOut, Database, Wifi } from 'lucide-react';
 import { useContent } from '../context/ContentContext';
@@ -11,7 +10,7 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
-  const { content, updateContent, resetContent } = useContent();
+  const { content, updateContent, resetContent, clearAnalyticsData } = useContent();
   const [activeTab, setActiveTab] = useState<'geral' | 'vitrine' | 'parceiros' | 'mega' | 'beneficios' | 'rodape' | 'scripts'>('geral');
   const [formData, setFormData] = useState(content);
   
@@ -20,6 +19,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
+  // Data Management State
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   // Sync internal form state when content changes externally (or reset)
   useEffect(() => {
@@ -67,6 +70,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
         if (e.code === '42P01') msg = "Tabelas não encontradas (Erro 42P01). Você rodou o script SQL?";
         
         alert(`FALHA NA CONEXÃO ❌\n\nDetalhe: ${msg}`);
+    }
+  };
+
+  const handleClearData = async () => {
+    if (!startDate || !endDate) {
+        alert("Por favor, selecione as datas de início e fim.");
+        return;
+    }
+    if (window.confirm(`TEM CERTEZA? \n\nVocê está prestes a apagar permanentemente todos os dados de cliques entre ${startDate} e ${endDate}.\n\nEsta ação não pode ser desfeita.`)) {
+        await clearAnalyticsData(startDate, endDate);
     }
   };
 
@@ -274,14 +287,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                 {activeTab === 'geral' && (
                 <div className="space-y-4">
                     <h3 className="text-lg font-bold border-b pb-2">Menu Principal</h3>
-                    <div className="bg-gray-50 p-4 rounded border">
-                    <h4 className="font-bold text-xs text-gray-500 uppercase mb-2">Logo do Site</h4>
-                    <ImageUploader 
-                        currentImage={formData.header.logoImage} 
-                        onImageChange={v => handleChange('header', 'logoImage', v)} 
-                        placeholder="Carregar Logo"
-                    />
+                    
+                    {/* Favicon e Logo */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-gray-50 p-4 rounded border">
+                            <h4 className="font-bold text-xs text-gray-500 uppercase mb-2">Logo do Site</h4>
+                            <ImageUploader 
+                                currentImage={formData.header.logoImage} 
+                                onImageChange={v => handleChange('header', 'logoImage', v)} 
+                                placeholder="Carregar Logo"
+                            />
+                        </div>
+                        <div className="bg-gray-50 p-4 rounded border">
+                            <h4 className="font-bold text-xs text-gray-500 uppercase mb-2">Favicon (Ícone Aba)</h4>
+                            <ImageUploader 
+                                currentImage={formData.header.favicon} 
+                                onImageChange={v => handleChange('header', 'favicon', v)} 
+                                placeholder="Carregar Favicon"
+                            />
+                        </div>
                     </div>
+
                     <Input label="Título Logo" value={formData.header.logoTitle} onChange={v => handleChange('header', 'logoTitle', v)} />
                     <Input label="Subtítulo Logo" value={formData.header.logoSubtitle} onChange={v => handleChange('header', 'logoSubtitle', v)} />
                     
@@ -466,6 +492,41 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                     <div className="pt-4 border-t mt-4">
                         <h4 className="font-bold text-sm mb-2 text-gray-700">Analytics Dashboard</h4>
                         <Input label="Link da Tabela Externa (Google Sheets)" value={formData.analytics?.externalSheetUrl || ''} onChange={v => handleAnalyticsChange('externalSheetUrl', v)} />
+                    </div>
+
+                    <div className="pt-4 border-t mt-4">
+                        <h4 className="font-bold text-sm mb-2 text-gray-700">Gerenciamento de Dados</h4>
+                        <div className="bg-red-50 p-4 rounded border border-red-100">
+                            <p className="text-xs text-red-600 mb-3 font-medium">
+                                ATENÇÃO: A exclusão de dados é irreversível.
+                            </p>
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data Início</label>
+                                    <input 
+                                        type="date" 
+                                        className="w-full border rounded p-2 text-sm"
+                                        value={startDate}
+                                        onChange={e => setStartDate(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data Fim</label>
+                                    <input 
+                                        type="date" 
+                                        className="w-full border rounded p-2 text-sm"
+                                        value={endDate}
+                                        onChange={e => setEndDate(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            <button 
+                                onClick={handleClearData}
+                                className="w-full bg-red-600 text-white font-bold py-2 rounded text-xs hover:bg-red-700 flex items-center justify-center gap-2"
+                            >
+                                <Trash2 size={14} /> Excluir Registros do Período
+                            </button>
+                        </div>
                     </div>
                 </div>
                 )}

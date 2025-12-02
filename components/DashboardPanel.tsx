@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { X, BarChart2, MousePointer, MessageCircle, ExternalLink, Link, Calendar } from 'lucide-react';
+import { X, BarChart2, MessageCircle, ExternalLink, Link, Calendar, FileText, Download } from 'lucide-react';
 import { useContent } from '../context/ContentContext';
+import { jsPDF } from 'jspdf';
 
 interface DashboardPanelProps {
   isOpen: boolean;
@@ -135,6 +136,106 @@ export const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose 
     };
   }, [partners, analytics, selectedMonthKey]);
 
+  // Generate PDF Report
+  const generatePDF = (partner: any, rank: number) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Background (Dark Theme Simulation)
+    // PDF generation is usually white background for printing, but let's make it look like a pro report
+    doc.setFillColor(255, 255, 255);
+    doc.rect(0, 0, pageWidth, doc.internal.pageSize.getHeight(), 'F');
+
+    // Header Color Strip
+    doc.setFillColor(225, 29, 43); // Brand Red
+    doc.rect(0, 0, pageWidth, 40, 'F');
+
+    // Header Title
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("Exclusive Labs | Relatório de Performance", 15, 25);
+
+    // Date
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const dateStr = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    doc.text(`Gerado em: ${dateStr}`, pageWidth - 15, 25, { align: 'right' });
+
+    // Partner Info Section
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text(partner.name, 15, 60);
+
+    doc.setFontSize(12);
+    doc.setTextColor(100, 100, 100);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Ranking Atual: #${rank}`, 15, 68);
+    
+    // Period Info
+    let periodText = "Todo o Período";
+    if (selectedMonthKey !== 'all') {
+        const [year, month] = selectedMonthKey.split('-');
+        const d = new Date(parseInt(year), parseInt(month) - 1);
+        periodText = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        periodText = periodText.charAt(0).toUpperCase() + periodText.slice(1);
+    }
+    doc.text(`Período: ${periodText}`, 15, 76);
+
+    // Stats Grid
+    const startY = 100;
+    
+    // Box 1: Total
+    doc.setDrawColor(200, 200, 200);
+    doc.setFillColor(245, 245, 245);
+    doc.roundedRect(15, startY, 55, 40, 3, 3, 'FD');
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text("TOTAL CLIQUES", 20, startY + 10);
+    
+    doc.setFontSize(24);
+    doc.setTextColor(225, 29, 43); // Red
+    doc.setFont("helvetica", "bold");
+    doc.text(String(partner.stats.total), 20, startY + 25);
+
+    // Box 2: WhatsApp
+    doc.setFillColor(240, 255, 240); // Light Green tint
+    doc.setDrawColor(200, 230, 200);
+    doc.roundedRect(75, startY, 55, 40, 3, 3, 'FD');
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 150, 100);
+    doc.text("WHATSAPP", 80, startY + 10);
+    
+    doc.setFontSize(24);
+    doc.setTextColor(34, 197, 94); // Green
+    doc.text(String(partner.stats.whatsapp), 80, startY + 25);
+
+    // Box 3: Website
+    doc.setFillColor(240, 245, 255); // Light Blue tint
+    doc.setDrawColor(200, 210, 240);
+    doc.roundedRect(135, startY, 55, 40, 3, 3, 'FD');
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 120, 180);
+    doc.text("WEBSITE", 140, startY + 10);
+    
+    doc.setFontSize(24);
+    doc.setTextColor(59, 130, 246); // Blue
+    doc.text(String(partner.stats.website), 140, startY + 25);
+
+    // Footer Note
+    doc.setFontSize(10);
+    doc.setTextColor(150, 150, 150);
+    doc.setFont("helvetica", "italic");
+    doc.text("Este relatório foi gerado automaticamente pelo sistema Exclusive Labs Analytics.", pageWidth / 2, 280, { align: 'center' });
+
+    // Save
+    doc.save(`Relatorio_${partner.name.replace(/\s+/g, '_')}_${periodText}.pdf`);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -163,7 +264,7 @@ export const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose 
                     <div className="bg-white/20 p-1 rounded-full">
                         <BarChart2 size={16} className="text-white" />
                     </div>
-                    <span className="font-bold text-sm tracking-wide">Dash Pro | Analytics</span>
+                    <span className="font-bold text-sm tracking-wide">Exclusive Labs | Analytics</span>
                 </div>
                 <button onClick={onClose} className="ml-4 text-gray-500 hover:text-white transition-colors">
                     <X size={24} />
@@ -271,7 +372,7 @@ export const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose 
                         </div>
                     ) : (
                         stats.partnerPerformance.map((partner, index) => (
-                            <div key={partner.id} className="p-4 border-b border-gray-800 last:border-0 hover:bg-[#1a1a1a] transition-colors">
+                            <div key={partner.id} className="p-4 border-b border-gray-800 last:border-0 hover:bg-[#1a1a1a] transition-colors group">
                                 <div className="flex justify-between items-start mb-2">
                                     <div className="flex items-center gap-3">
                                         <span className={`text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full ${index < 3 ? 'bg-[#E11D2B] text-white' : 'bg-gray-800 text-gray-500'}`}>
@@ -279,7 +380,16 @@ export const DashboardPanel: React.FC<DashboardPanelProps> = ({ isOpen, onClose 
                                         </span>
                                         <span className="text-white font-bold text-sm">{partner.name}</span>
                                     </div>
-                                    <span className="text-[#E11D2B] font-black text-lg">{partner.stats.total}</span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-[#E11D2B] font-black text-lg">{partner.stats.total}</span>
+                                        <button 
+                                            onClick={() => generatePDF(partner, index + 1)}
+                                            className="text-gray-600 hover:text-white transition-colors p-1"
+                                            title="Baixar Relatório PDF"
+                                        >
+                                            <FileText size={16} />
+                                        </button>
+                                    </div>
                                 </div>
                                 
                                 {/* Progress Bar Visual */}

@@ -1,15 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { SiteContent, Partner, AnalyticsData, ClickEvent } from '../types';
+import { SiteContent, Partner, AnalyticsData, ClickEvent, ContentContextType } from '../types';
 import { DEFAULT_CONTENT } from '../constants';
 import { supabase } from '../lib/supabase';
-
-interface ContentContextType {
-  content: SiteContent;
-  updateContent: (newContent: SiteContent) => Promise<void>;
-  resetContent: () => void;
-  trackPartnerClick: (partnerId: number, type: 'website' | 'whatsapp') => void;
-  isLoading: boolean;
-}
 
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
@@ -219,8 +211,45 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  // Function to delete analytics data within a date range
+  const clearAnalyticsData = async (startDate: string, endDate: string) => {
+    try {
+        // Convert string dates (YYYY-MM-DD) to epoch milliseconds
+        // Start date should be 00:00:00 of that day
+        const start = new Date(startDate).setHours(0,0,0,0);
+        // End date should be 23:59:59 of that day
+        const end = new Date(endDate).setHours(23,59,59,999);
+
+        if (isNaN(start) || isNaN(end)) {
+            alert("Datas inválidas.");
+            return;
+        }
+
+        setIsLoading(true);
+
+        const { error, count } = await supabase
+            .from('analytics_events')
+            .delete({ count: 'exact' })
+            .gte('timestamp', start)
+            .lte('timestamp', end);
+
+        if (error) throw error;
+
+        alert(`Sucesso! ${count} registros de cliques foram excluídos neste período.`);
+        
+        // Refresh data
+        await fetchData();
+
+    } catch (e) {
+        console.error("Error clearing analytics:", e);
+        alert("Erro ao limpar dados. Verifique o console.");
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
   return (
-    <ContentContext.Provider value={{ content, updateContent, resetContent, trackPartnerClick, isLoading }}>
+    <ContentContext.Provider value={{ content, updateContent, resetContent, trackPartnerClick, clearAnalyticsData, isLoading }}>
       {children}
     </ContentContext.Provider>
   );

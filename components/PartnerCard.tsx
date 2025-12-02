@@ -10,71 +10,103 @@ const WhatsAppIcon = () => (
   </svg>
 )
 
-export const PartnerCard: React.FC<{ partner: Partner }> = ({ partner }) => {
+interface PartnerCardProps {
+  partner: Partner;
+  index: number;
+}
+
+export const PartnerCard: React.FC<PartnerCardProps> = ({ partner, index }) => {
   const { trackPartnerClick } = useContent();
 
+  // Calculate a unique delay for each card to create a wave/staggered effect
+  // We use modulo to cycle the delay so it doesn't get too long for items far down the list
+  const delay = `${(index % 5) * 1.5}s`;
+
   return (
-    <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col h-full border border-gray-100 group">
-      
-      {/* Image Container */}
-      <div className="relative h-48 overflow-hidden">
-        <div className="absolute inset-0 bg-gray-200 animate-pulse" /> {/* Placeholder while loading */}
-        <img 
-          src={partner.image} 
-          alt={partner.name} 
-          className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
-          loading="lazy"
-          decoding="async"
-        />
-        {partner.featured && (
-          <div className="absolute top-3 left-3 bg-brand-red text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
-            DESTAQUE
+    <>
+      <style>
+        {`
+          @keyframes neon-pulse {
+            0%, 100% {
+              box-shadow: 0 0 0 rgba(225, 29, 43, 0);
+              border-color: rgba(243, 244, 246, 1); /* gray-100 */
+            }
+            50% {
+              box-shadow: 0 0 15px rgba(225, 29, 43, 0.25);
+              border-color: rgba(225, 29, 43, 0.4);
+            }
+          }
+          .animate-neon-pulse {
+            animation: neon-pulse 4s ease-in-out infinite;
+          }
+        `}
+      </style>
+
+      <div 
+        className="bg-white rounded-xl transition-all duration-300 overflow-hidden flex flex-col h-full border group animate-neon-pulse"
+        style={{ animationDelay: delay }}
+      >
+        
+        {/* Image Container */}
+        <div className="relative h-48 overflow-hidden">
+          <div className="absolute inset-0 bg-gray-200 animate-pulse" /> {/* Placeholder while loading */}
+          <img 
+            src={partner.image} 
+            alt={partner.name} 
+            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+            loading="lazy"
+            decoding="async"
+          />
+          {partner.featured && (
+            <div className="absolute top-3 left-3 bg-brand-red text-white text-xs font-bold px-3 py-1 rounded-full shadow-md z-10">
+              DESTAQUE
+            </div>
+          )}
+          <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/70 to-transparent p-4">
+            <h3 className="text-white text-xl font-bold truncate">{partner.name}</h3>
           </div>
-        )}
-        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/70 to-transparent p-4">
-           <h3 className="text-white text-xl font-bold truncate">{partner.name}</h3>
+        </div>
+
+        {/* Content */}
+        <div className="p-5 flex-grow flex flex-col">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center text-gray-500 text-sm">
+              <MapPin size={16} className="mr-1 text-brand-red" />
+              <span className="line-clamp-1">{partner.location}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 mb-6 bg-gray-50 p-2 rounded-lg w-fit">
+            <Car size={18} className="text-gray-400" />
+            <span className="text-sm font-semibold text-gray-700">{partner.stockCount} ofertas disponíveis</span>
+          </div>
+
+          {/* Buttons - Pushing to bottom */}
+          <div className="mt-auto grid grid-cols-2 gap-3">
+            <a 
+              href={partner.websiteUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              onClick={() => trackPartnerClick(partner.id, 'website')}
+              className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-brand-red text-brand-red font-bold rounded-lg hover:bg-red-50 transition-colors text-sm"
+            >
+              Site da Loja
+              <ExternalLink size={16} />
+            </a>
+            
+            <a 
+              href={partner.whatsappUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              onClick={() => trackPartnerClick(partner.id, 'whatsapp')}
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] text-white font-bold rounded-lg hover:bg-[#128C7E] transition-colors shadow-sm text-sm"
+            >
+              WhatsApp
+              <WhatsAppIcon />
+            </a>
+          </div>
         </div>
       </div>
-
-      {/* Content */}
-      <div className="p-5 flex-grow flex flex-col">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center text-gray-500 text-sm">
-             <MapPin size={16} className="mr-1 text-brand-red" />
-             <span className="line-clamp-1">{partner.location}</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 mb-6 bg-gray-50 p-2 rounded-lg w-fit">
-          <Car size={18} className="text-gray-400" />
-          <span className="text-sm font-semibold text-gray-700">{partner.stockCount} ofertas disponíveis</span>
-        </div>
-
-        {/* Buttons - Pushing to bottom */}
-        <div className="mt-auto grid grid-cols-2 gap-3">
-          <a 
-            href={partner.websiteUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            onClick={() => trackPartnerClick(partner.id, 'website')}
-            className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-brand-red text-brand-red font-bold rounded-lg hover:bg-red-50 transition-colors text-sm"
-          >
-            Site da Loja
-            <ExternalLink size={16} />
-          </a>
-          
-          <a 
-            href={partner.whatsappUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            onClick={() => trackPartnerClick(partner.id, 'whatsapp')}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] text-white font-bold rounded-lg hover:bg-[#128C7E] transition-colors shadow-sm text-sm"
-          >
-            WhatsApp
-            <WhatsAppIcon />
-          </a>
-        </div>
-      </div>
-    </div>
+    </>
   );
 };

@@ -1,19 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Header } from './components/Header';
-import { HeroVideo } from './components/HeroVideo';
-import { PartnerGrid } from './components/PartnerGrid';
-import { BenefitsSection } from './components/BenefitsSection';
-import { AboutEventSection } from './components/AboutEventSection';
-import { Footer } from './components/Footer';
 import { ContentProvider } from './context/ContentContext';
-import { AdminPanel } from './components/AdminPanel';
-import { DashboardPanel } from './components/DashboardPanel';
-import { TickerBanner } from './components/TickerBanner';
 import { ScriptManager } from './components/ScriptManager';
+import { FaviconManager } from './components/FaviconManager';
+import { Loader2 } from 'lucide-react';
 
-const App: React.FC = () => {
+// Lazy load heavy components
+const HeroVideo = React.lazy(() => import('./components/HeroVideo').then(module => ({ default: module.HeroVideo })));
+const PartnerGrid = React.lazy(() => import('./components/PartnerGrid').then(module => ({ default: module.PartnerGrid })));
+const BenefitsSection = React.lazy(() => import('./components/BenefitsSection').then(module => ({ default: module.BenefitsSection })));
+const AboutEventSection = React.lazy(() => import('./components/AboutEventSection').then(module => ({ default: module.AboutEventSection })));
+const Footer = React.lazy(() => import('./components/Footer').then(module => ({ default: module.Footer })));
+const AdminPanel = React.lazy(() => import('./components/AdminPanel').then(module => ({ default: module.AdminPanel })));
+const DashboardPanel = React.lazy(() => import('./components/DashboardPanel').then(module => ({ default: module.DashboardPanel })));
+const TickerBanner = React.lazy(() => import('./components/TickerBanner').then(module => ({ default: module.TickerBanner })));
+
+const LoadingScreen = () => (
+  <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+      <Loader2 className="w-12 h-12 text-[#E11D2B] animate-spin mb-4" />
+      <p className="text-gray-500 text-sm font-medium animate-pulse">Carregando ofertas...</p>
+  </div>
+);
+
+const AppContent: React.FC = () => {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Handle URL routing for standalone Dashboard
   useEffect(() => {
@@ -30,13 +42,30 @@ const App: React.FC = () => {
 
     // Listen for changes
     window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    
+    // Cleanup navigation listener (back button fix)
+    window.addEventListener('popstate', handleHashChange);
+
+    // Simulate initial data fetch delay to show loading screen cleanly
+    // In a real app, this would be tied to ContentContext isLoading, 
+    // but since we wrap everything in Suspense, we handle it slightly differently here.
+    const timer = setTimeout(() => setIsInitialLoad(false), 1000);
+
+    return () => {
+        window.removeEventListener('hashchange', handleHashChange);
+        window.removeEventListener('popstate', handleHashChange);
+        clearTimeout(timer);
+    }
   }, []);
+
+  if (isInitialLoad) {
+      return <LoadingScreen />;
+  }
 
   // If Dashboard is open via Route, we show ONLY the dashboard (Mobile App feel)
   if (isDashboardOpen) {
     return (
-       <ContentProvider>
+       <Suspense fallback={<LoadingScreen />}>
           <DashboardPanel 
             isOpen={true} 
             onClose={() => {
@@ -44,37 +73,50 @@ const App: React.FC = () => {
               setIsDashboardOpen(false);
             }} 
           />
-       </ContentProvider>
+       </Suspense>
     );
   }
 
   return (
-    <ContentProvider>
-      <ScriptManager />
       <div className="min-h-screen flex flex-col font-sans relative">
+        <ScriptManager />
+        <FaviconManager />
         <Header />
         <main className="flex-grow">
-          <HeroVideo />
-          <TickerBanner />
-          <PartnerGrid />
-          <AboutEventSection />
-          <BenefitsSection />
+          <Suspense fallback={<div className="h-96 flex items-center justify-center"><Loader2 className="animate-spin text-gray-300" /></div>}>
+             <HeroVideo />
+             <TickerBanner />
+             <PartnerGrid />
+             <AboutEventSection />
+             <BenefitsSection />
+          </Suspense>
         </main>
-        <Footer 
-          onOpenAdmin={() => setIsAdminOpen(true)} 
-          onOpenDashboard={() => {
-             window.location.hash = '#/dashboard';
-             setIsDashboardOpen(true);
-          }}
-        />
+        <Suspense fallback={<div className="h-20 bg-gray-100"></div>}>
+            <Footer 
+            onOpenAdmin={() => setIsAdminOpen(true)} 
+            onOpenDashboard={() => {
+                window.location.hash = '#/dashboard';
+                setIsDashboardOpen(true);
+            }}
+            />
+        </Suspense>
         
-        <AdminPanel 
-          isOpen={isAdminOpen} 
-          onClose={() => setIsAdminOpen(false)} 
-        />
+        <Suspense fallback={null}>
+            <AdminPanel 
+            isOpen={isAdminOpen} 
+            onClose={() => setIsAdminOpen(false)} 
+            />
+        </Suspense>
       </div>
-    </ContentProvider>
   );
 };
+
+const App: React.FC = () => {
+  return (
+    <ContentProvider>
+       <AppContent />
+    </ContentProvider>
+  );
+}
 
 export default App;
