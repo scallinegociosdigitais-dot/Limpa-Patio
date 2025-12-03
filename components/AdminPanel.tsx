@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, X, Save, RotateCcw, Plus, Trash2, Upload, Image as ImageIcon, Lock, LogIn, LogOut, Database, Wifi } from 'lucide-react';
 import { useContent } from '../context/ContentContext';
-import { Partner, BenefitItem, AboutFeatureCard } from '../types';
+import { Partner, BenefitItem, AboutFeatureCard, TeaserItem } from '../types';
 import { supabase } from '../lib/supabase';
 
 interface AdminPanelProps {
@@ -11,7 +11,7 @@ interface AdminPanelProps {
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
   const { content, updateContent, resetContent, clearAnalyticsData } = useContent();
-  const [activeTab, setActiveTab] = useState<'geral' | 'vitrine' | 'parceiros' | 'mega' | 'beneficios' | 'rodape' | 'scripts'>('geral');
+  const [activeTab, setActiveTab] = useState<'geral' | 'vitrine' | 'parceiros' | 'teaser' | 'mega' | 'beneficios' | 'rodape' | 'scripts'>('geral');
   const [formData, setFormData] = useState(content);
   
   // Auth State
@@ -150,6 +150,47 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
         }
     }));
   };
+
+  // Teaser Handlers
+  const handleTeaserItemChange = (index: number, field: keyof TeaserItem, value: any) => {
+    const newItems = [...(formData.teaser?.items || [])];
+    newItems[index] = { ...newItems[index], [field]: value };
+    setFormData(prev => ({
+        ...prev,
+        teaser: {
+            ...(prev.teaser || { sectionTitle: '', items: [] }),
+            items: newItems
+        }
+    }));
+  };
+
+  const addTeaserItem = () => {
+      const newItem: TeaserItem = {
+          image: "https://picsum.photos/300/200",
+          tag: "Oferta",
+          conditionText: "CONDIÇÃO IMPERDÍVEL", // Default value
+          pricePlaceholder: "R$ 00.000",
+          buttonText: "Descubra em 17/03"
+      };
+      setFormData(prev => ({
+          ...prev,
+          teaser: {
+              ...(prev.teaser || { sectionTitle: '', items: [] }),
+              items: [...(prev.teaser?.items || []), newItem]
+          }
+      }));
+  };
+
+  const removeTeaserItem = (index: number) => {
+      const newItems = (formData.teaser?.items || []).filter((_, i) => i !== index);
+      setFormData(prev => ({
+          ...prev,
+          teaser: {
+              ...(prev.teaser || { sectionTitle: '', items: [] }),
+              items: newItems
+          }
+      }));
+  };
   
   const handleScriptChange = (field: string, value: string) => {
       setFormData(prev => ({
@@ -262,7 +303,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
         <div className="flex overflow-x-auto bg-gray-100 border-b p-2 gap-2 shrink-0">
             {[
             { id: 'geral', label: 'Menu Principal' },
-            { id: 'vitrine', label: 'Vitrine (Vídeo)' },
+            { id: 'vitrine', label: 'Vitrine' },
+            { id: 'teaser', label: 'Ofertas Teaser' }, // Added Teaser Tab
             { id: 'parceiros', label: 'Parceiros' },
             { id: 'mega', label: 'Mega Feirão' },
             { id: 'beneficios', label: 'Carros e Motos' },
@@ -345,6 +387,56 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
                     <Input label="Link YouTube" value={formData.hero.videoId} onChange={v => handleChange('hero', 'videoId', v)} />
                     <Input label="Texto Botão CTA" value={formData.hero.ctaText} onChange={v => handleChange('hero', 'ctaText', v)} />
                     <Input label="Subtexto do Botão" value={formData.hero.ctaSubtext} onChange={v => handleChange('hero', 'ctaSubtext', v)} />
+                </div>
+                )}
+
+                {activeTab === 'teaser' && (
+                <div className="space-y-6">
+                    <div className="flex justify-between items-center border-b pb-2">
+                        <h3 className="text-lg font-bold">Ofertas Teaser</h3>
+                        <button onClick={addTeaserItem} className="flex items-center gap-1 text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">
+                            <Plus size={16} /> Adicionar Card
+                        </button>
+                    </div>
+
+                    <Input 
+                        label="Título da Seção" 
+                        value={formData.teaser?.sectionTitle || ''} 
+                        onChange={v => handleChange('teaser', 'sectionTitle', v)} 
+                    />
+
+                    {formData.teaser?.items.map((item, index) => (
+                        <div key={index} className="bg-gray-50 p-4 rounded-lg border relative">
+                            <button onClick={() => removeTeaserItem(index)} className="absolute top-2 right-2 text-red-500 hover:text-red-700">
+                                <Trash2 size={18} />
+                            </button>
+                            <h4 className="font-bold text-gray-400 text-xs uppercase mb-3">Card #{index + 1}</h4>
+                            
+                            <div className="mb-4">
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Imagem do Carro</label>
+                                <ImageUploader 
+                                    currentImage={item.image} 
+                                    onImageChange={v => handleTeaserItemChange(index, 'image', v)} 
+                                />
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                                <Input label="Tag (Ex: Hatch)" value={item.tag} onChange={v => handleTeaserItemChange(index, 'tag', v)} />
+                                <Input 
+                                    label="Texto Condição" 
+                                    value={item.conditionText || ''} 
+                                    onChange={v => handleTeaserItemChange(index, 'conditionText', v)} 
+                                    placeholder="CONDIÇÃO IMPERDÍVEL"
+                                />
+                                <Input label="Preço (Borrado)" value={item.pricePlaceholder} onChange={v => handleTeaserItemChange(index, 'pricePlaceholder', v)} />
+                                <Input label="Texto do Botão" value={item.buttonText} onChange={v => handleTeaserItemChange(index, 'buttonText', v)} />
+                            </div>
+                        </div>
+                    ))}
+                    
+                    {(!formData.teaser?.items || formData.teaser.items.length === 0) && (
+                        <p className="text-gray-500 text-sm text-center italic py-4">Nenhum card adicionado.</p>
+                    )}
                 </div>
                 )}
 
@@ -569,7 +661,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ isOpen, onClose }) => {
 };
 
 // Helper Components (reused)
-const Input = ({ label, value, onChange, type = "text" }: any) => (
+const Input = ({ label, value, onChange, type = "text", placeholder }: any) => (
   <div>
     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{label}</label>
     <input 
@@ -577,6 +669,7 @@ const Input = ({ label, value, onChange, type = "text" }: any) => (
       className="w-full border rounded p-2 text-sm focus:border-brand-red focus:ring-1 focus:ring-brand-red outline-none"
       value={value}
       onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
     />
   </div>
 );

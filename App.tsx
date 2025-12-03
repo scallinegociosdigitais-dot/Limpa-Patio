@@ -14,6 +14,7 @@ const Footer = React.lazy(() => import('./components/Footer').then(module => ({ 
 const AdminPanel = React.lazy(() => import('./components/AdminPanel').then(module => ({ default: module.AdminPanel })));
 const DashboardPanel = React.lazy(() => import('./components/DashboardPanel').then(module => ({ default: module.DashboardPanel })));
 const TickerBanner = React.lazy(() => import('./components/TickerBanner').then(module => ({ default: module.TickerBanner })));
+const TeaserCarousel = React.lazy(() => import('./components/TeaserCarousel').then(module => ({ default: module.TeaserCarousel })));
 
 const LoadingScreen = () => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-white">
@@ -87,6 +88,7 @@ const AppContent: React.FC = () => {
              <HeroVideo />
              <TickerBanner />
              <PartnerGrid />
+             <TeaserCarousel />
              <AboutEventSection />
              <BenefitsSection />
           </Suspense>

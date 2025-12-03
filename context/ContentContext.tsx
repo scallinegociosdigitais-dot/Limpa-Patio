@@ -45,6 +45,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         ...DEFAULT_CONTENT,
         header: { ...DEFAULT_CONTENT.header, ...(generalData?.header || {}) },
         hero: { ...DEFAULT_CONTENT.hero, ...(generalData?.hero || {}) },
+        teaser: { ...DEFAULT_CONTENT.teaser, ...(generalData?.teaser || {}) }, // ADDED TEASER
         about: { ...DEFAULT_CONTENT.about, ...(generalData?.about || {}) },
         benefits: { ...DEFAULT_CONTENT.benefits, ...(generalData?.benefits || {}) },
         footer: { ...DEFAULT_CONTENT.footer, ...(generalData?.footer || {}) },
@@ -116,6 +117,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             .update({
                 header: newContent.header,
                 hero: newContent.hero,
+                teaser: newContent.teaser, // ADDED TEASER
                 about: newContent.about,
                 benefits: newContent.benefits,
                 footer: newContent.footer,
@@ -214,11 +216,16 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Function to delete analytics data within a date range
   const clearAnalyticsData = async (startDate: string, endDate: string) => {
     try {
-        // Convert string dates (YYYY-MM-DD) to epoch milliseconds
-        // Start date should be 00:00:00 of that day
-        const start = new Date(startDate).setHours(0,0,0,0);
-        // End date should be 23:59:59 of that day
-        const end = new Date(endDate).setHours(23,59,59,999);
+        // Manual parsing to avoid timezone issues. 
+        // We assume the user wants to delete based on the date strings provided (YYYY-MM-DD).
+        
+        // Start Date: YYYY-MM-DD 00:00:00 Local
+        const [sYear, sMonth, sDay] = startDate.split('-').map(Number);
+        const start = new Date(sYear, sMonth - 1, sDay, 0, 0, 0, 0).getTime();
+
+        // End Date: YYYY-MM-DD 23:59:59 Local
+        const [eYear, eMonth, eDay] = endDate.split('-').map(Number);
+        const end = new Date(eYear, eMonth - 1, eDay, 23, 59, 59, 999).getTime();
 
         if (isNaN(start) || isNaN(end)) {
             alert("Datas inválidas.");

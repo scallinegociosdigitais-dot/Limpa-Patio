@@ -74,6 +74,20 @@ export interface BenefitsContent {
   items: BenefitItem[];
 }
 
+// NEW: Teaser Section Types
+export interface TeaserItem {
+  image: string;
+  tag: string;
+  conditionText?: string; // New field for "Condição Imperdível"
+  pricePlaceholder: string; // The text behind the blur
+  buttonText: string;
+}
+
+export interface TeaserContent {
+  sectionTitle: string;
+  items: TeaserItem[];
+}
+
 export interface FooterContent {
   contactEmail: string;
   contactPhone: string;
@@ -114,6 +128,7 @@ export interface AnalyticsData {
 export interface SiteContent {
   header: HeaderContent;
   hero: HeroContent;
+  teaser?: TeaserContent; // Added Teaser Content
   partners: Partner[];
   partnersConfig?: PartnersConfig;
   about: AboutContent;

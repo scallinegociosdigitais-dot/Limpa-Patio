@@ -21,6 +21,11 @@ export const DEFAULT_CONTENT: SiteContent = {
     ctaText: "",
     ctaSubtext: ""
   },
+  // Initialize Teaser with default structure
+  teaser: {
+    sectionTitle: "Carros e motos com condições imperdíveis",
+    items: [] 
+  },
   partners: [],
   partnersConfig: {
     autoHighlight: true
